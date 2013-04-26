@@ -98,19 +98,52 @@ function get_dragon_quiz( $input ) {
 
 	echo '<div class="quiz">';
 
-		// Get the specific quiz from the quiz list.
+		// Get the specific quiz data from the quiz list.
 		$atts = get_row( 'list' , 'id = '. $id );
-		$ds_title = $atts['title'];
-		$ds_questions = explode( ',' , $atts['questions'] );
-		$ds_results = explode( ',' ,  $atts['results'] );
+
+		// Display the title of the Quiz
 		echo "<div class='quiz_title'>";
-			print_r($ds_title);
+			echo $atts['title'];
 		echo "</div>";
+
+		// The entire list of quiz questions
 		echo "<div class='quiz_questions'>";
-			print_r($ds_questions);
-		echo "</div>";
+
+			// Cycle through each Question ID in the list
+			$ds_questionIDs = explode( ',' , $atts['questions'] );
+			foreach ($ds_questionIDs as $ds_quesID) {
+
+				// For a single Question ID, get the specific Question row from the table
+				$ds_ask = get_row('question','id = '.$ds_quesID);
+
+				echo '<div class="one_question">';
+					// Display the question contents
+					echo '<h2>'.$ds_ask['question'].'</h2>';
+
+					// For Now, display whether it is a radio button question or not.
+					echo '<div>'.$ds_ask['radio'].'</div>';
+
+					// Cycle through each Answer String in the list
+					$answerList = explode( ',' , $ds_ask['answers']);
+					foreach ( $answerList as $answer ) {
+						echo '<div class="one_answer"'.$answer.'</div>';
+					}
+
+					// Display the results and weight for now.
+					echo '<div>'.$ds_ask['results'].'</div>';
+					echo '<div>'.$ds_ask['weight'].'</div>';
+
+				echo '</div><!-- .one_question -->';
+			}
+		echo "</div><!-- .quiz_questions -->";
+
 		echo "<div class='quiz_results'>";
-			print_r($ds_results);
+			echo "<h2>Results:</h2>";
+			$ds_resultIDs = explode( ',' ,  $atts['results'] );
+			$ds_resultList = explode(',' , $ds_resultIDs);
+			foreach ($ds_resultList as $ds_resultID) {
+				echo $ds_resultID;
+			}
 		echo "</div>";
 
 	echo '</div><!-- .quiz -->';

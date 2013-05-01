@@ -56,7 +56,7 @@ function dragon_quiz_install() {
 		'title' => 'My Quiz'
 		));
 	$wpdb->insert( $table_question, array( 
-		'quizid' => 0, 
+		'quizid' => 1, 
 		'question' => 'What Is Your Favorite Fruit?', 
 		'type' => 'radio', 
 		'answers' => 'Apple, Blueberry', 
@@ -64,7 +64,7 @@ function dragon_quiz_install() {
 		'weight' => '1,1' 
 		));
 	$wpdb->insert( $table_question, array( 
-		'quizid' => 0, 
+		'quizid' => 1, 
 		'question' => 'What is Your Favorite Flower?', 
 		'type' => 'radio', 
 		'answers' => 'Violet, Rose', 
@@ -110,49 +110,59 @@ function get_dragon_quiz( $input ) {
 		$atts = get_quiz( $id );
 
 		// Display the title of the Quiz
-		echo "<h2 class='quiz_title'>";
+		echo "<h2 class='quiz-title'>";
 			echo $atts['title'];
 		echo "</h2>";
 
 		// The entire list of quiz questions
-		echo "<div class='quiz_questions'>";
+		echo "<div class='quiz-questions'>";
 
 			// Cycle through each Question ID in the list
 			$ds_questions = get_questions( $id );
-
 			foreach ($ds_questions as $ds_ask) {
 				
-				echo '<div class="one_question">';
+				echo '<div class="one-question">';
+
 					// Display the question contents
 					echo '<h3>'.$ds_ask['question'].'</h3>';
 
 					?>
 						<form>
-					<?php
-						// Cycle through each Answer String in the list
-						$answerList = explode( ',' , $ds_ask['answers']);
-						foreach ( $answerList as $answer ) {
-							echo '<input name="ds-quiz" type="'. $ds_ask['type'] .'" class="one_answer">'.$answer.'</input>';
-						}
-					?>
+							<?php
+								// Parse the data into an array
+								$answerList = explode( ',' , $ds_ask['answers']);
+								$resultList = explode( ',' , $ds_ask['results']);
+								$weightList = explode( ',' , $ds_ask['weight']);
+
+								// Cycle through each item in the answer array
+								foreach ( $answerList as $key => $value ) {
+									$answer = $answerList[$key];
+									$result = $resultList[$key];
+									$weight = $weightList[$key];
+									echo '<input name="ds-quiz" value="result-' . $result . ' weight-' . $weight . '" type="'. $ds_ask['type'] .'" class="one-answer">'.$answer.'</input>';
+								}
+							?>
 						</form>
 					<?php
-
-					// Display the results and weight for now.
-					echo '<div>'.$ds_ask['results'].'</div>';
-					echo '<div>'.$ds_ask['weight'].'</div>';
-
-				echo '</div><!-- .one_question -->';
+					
+				echo '</div><!-- .one-question -->';
 			}
-		echo "</div><!-- .quiz_questions -->";
+		echo "</div><!-- .quiz-questions -->";
 
-		echo "<div class='quiz_results'>";
+		/*
+		echo "<div class='quiz-results'>";
 			echo "<h2>Results:</h2>";
-			$ds_resultIDs = explode( ',' ,  $atts['results'] );
-			foreach ($ds_resultIDs as $ds_resultID) {
-				$oneResult = get_results( $ds_resultID );
+			$resultList = explode( ',' ,  $atts['results'] );
+			foreach ($resultList as $oneResult) {
+				$oneResult = get_results( $oneResult );
+				echo "<div class='one-result'>"
+					echo "<h3>" . $oneResult['name'] . "</h3>";
+					echo "<img src='" . $oneResult['image'] . "' />";
+					echo $oneResult['content'];
+				echo "</div><!-- .one-result -->";
 			}
-		echo "</div>";
+		echo "</div><!-- .quiz-results -->";
+		*/
 
 	echo '</div><!-- .quiz -->';
 }
@@ -194,10 +204,10 @@ function get_quiz( $id ) {
 	$table_name = $wpdb->prefix . "dragon_quiz_list";
 	// If our ID is -1 then the user wants all of the quizzes.
 	if($id == -1) {
-		$values = $wpdb->get_results( "SELECT * FROM $table_name"  , ARRAY_A );
+		$values = $wpdb->get_results( "SELECT * FROM " . $table_name . " WHERE 1" , ARRAY_A );
 	}
 	else {
-		$values = $wpdb->get_row( "SELECT * FROM $table_name WHERE id = " . $id , ARRAY_A );
+		$values = $wpdb->get_row( "SELECT * FROM " . $table_name . " WHERE id = " . $id , ARRAY_A );
 	}
 	return $values;
 }
@@ -207,7 +217,7 @@ function get_questions( $id ) {
 	// Get the table data
 	global $wpdb;
 	$table_name = $wpdb->prefix . "dragon_quiz_question";
-	$values = $wpdb->get_results( "SELECT * FROM $table_name WHERE quizid = " . $id  , ARRAY_A );
+	$values = $wpdb->get_results( "SELECT * FROM " . $table_name . " WHERE quizid = " . $id  , ARRAY_A );
 	return $values;
 }
 // Get a result's information from the table.  
@@ -216,7 +226,7 @@ function get_results( $id ) {
 	// Get the table data
 	global $wpdb;
 	$table_name = $wpdb->prefix . "dragon_quiz_result";
-	$values = $wpdb->get_results( "SELECT * FROM $table_name WHERE id = " . $id  , ARRAY_A );
+	$values = $wpdb->get_results( "SELECT * FROM " . $table_name . " WHERE id = " . $id  , ARRAY_A );
 	return $values;
 }
 
@@ -249,38 +259,138 @@ function dragon_quiz_display_options() {
 			</p>
 
 			<style type="text/css">
-				.one-set {
-					margin: 1em 0;
-					padding: 1em;
-					border: 1px dotted #000000;
-					display: none;
-				}
-				.one-title {
+				.setting {
+					margin: 1em;
+					padding: 0.5em;
+					border: 1px solid #000000;
+					border-radius: 10px;
+					background-color: #CCC;
 					display: block;
+				}
+				.setting .title {
+					padding-left: 0.5em;
+					border: 1px dotted #000000;
+					border-radius: 10px;
+					background-color: #FFF;
+					display: inline-block;
+					cursor: pointer;
+				}
+				.setting .option {
+					margin: 0.5em;
+					display: none;
+					margin-left: 2em;
+				}
+				.setting .option .question {
+					display: block;
+					margin-left: 4em;
+				}
+				.setting .option .question input {
+					width: 30em;
+				}
+				.setting .option .answer-and-weight {
+					display: block;
+					margin-left: 2em;
+				}
+				.setting .option .answer-and-weight .answer {
+					width: 20em;
+				}
+				.setting .option .answer-and-weight .weight {
+					width: 2em;
+				}
+				.add , .remove {
+					display: inline-block;
+					width: 17px;
+					height: 17px;
+					padding: 0;
+					margin: 0.3em;
+					border: 1px solid #000;
+					border-radius: 10px;
+					text-align: center;
+					color: white;
+					box-shadow: 3px 3px 4px #333;
+					cursor: pointer;
+					font-size: 20px;
+				}
+				.add {
+					background-color: green;
+				}
+				.remove {
+					background-color: red;
 				}
 			</style>
 			<script type="text/javascript">
 				function toggleDisplay(e) {
-					// Display the parent as a block
+					// Display the child as a block
+					var parent = e.parentNode;
+					var child = parent.getElementsByClassName('option');
+					
+					if( child[0].style.display == "none" || child[0].style.display == "" ) {
+						child[0].style.display = "block"; 
+					}
+					else {
+						child[0].style.display = "none";
+					}
 				}
 			</script>
 
 			<?php 
 				// Get all of the quizzes.
 				$quizList = get_quiz( -1 );
-				array_push( $quizList , array('title' => 'INSERT NEW QUIZ') );
 				foreach ($quizList as $oneQuiz) {
 					?>
-						<div class="one-set" onclick="toggleDisplay(this);" class="one-title"><?php echo $oneQuiz['title']; ?></label>
-							<div class="one-option">
+						<div class="setting">
+							<h2 onclick="toggleDisplay(this);" class="title">
+								<?php echo $oneQuiz['title']; ?>
+							</h2>
+							<div class="remove">-</div>
+							<div class="add" onclick="newQuiz();">+</div>
+							<div class="option">
 								<span>Name: </span>
 								<input type="text" value="<?php echo $oneQuiz['title']; ?>" />
-							</div>
-						</div>
+								<?php 
+									// Get the Question List
+									$questionList = get_questions( $oneQuiz['id'] ); 
+
+									// For a single question
+									foreach( $questionList as $oneQuestion ) {
+
+										// Get each answer and it's weight
+										$answerList = explode( ',' , $oneQuestion['answers'] );
+										$weightList = explode( ',' , $oneQuestion['weight'] );
+								?>
+										<div class="question">
+											<span>Question: </span>
+											<input type="text" value="<?php echo $oneQuestion['question']; ?>" />
+											<div class="remove">-</div>
+											<div class="add">+</div>
+								<?php
+										// Iterate through the list of answers, display it's answer and weight
+										foreach( $answerList as $key => $value) {
+								?>
+											<div class="answer-and-weight">
+												<span>Answer: </span>
+												<input class="answer" type="text" value="<?php echo $answerList[$key]; ?>"> </input>
+												<span>Weight: </span>
+												<input class="weight" type="text" value="<?php echo $weightList[$key]; ?>"> </input>
+												<div class="remove">-</div>
+												<div class="add">+</div>
+											</div><!-- .answer-and-weight-->
+
+								<?php
+										}
+								?>
+										</div><!-- .question -->
+								<?php
+									}
+								?>
+							</div><!-- .option -->
+						</div><!-- .setting -->
+
 					<?php
 				}
 			?>
-			
+			<div class="add">+</div>
+
 			<p>
 				<span class="description">Want your customized quiz elsewhere on your page?  Just call this php function on your template: get_dragon_quiz();</span>
 			</p>
